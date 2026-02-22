@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: student-management-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    depends_on:
+      - mongodb
+    volumes:
+      - ./src:/app/src
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - student-network
+
+  mongodb:
+    image: mongo:7.0
+    container_name: student-management-db
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=student-management
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - student-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongodb_data:
+
+networks:
+  student-network:
+    driver: bridge
